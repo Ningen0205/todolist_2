@@ -15,19 +15,39 @@ class UnknownRegisterFailedException extends BaseException {
   UnknownRegisterFailedException(super.message);
 }
 
+class UnknownLoginFailedException extends BaseException {
+  UnknownLoginFailedException(super.message);
+}
+
 const WEEK_PASSWORD = 'week-password';
 const EMAIL_ALREADY_IN_USE = 'email-already-in-use';
 
+const USER_NOT_FOUND = 'user-not-found';
+const WRONG_PASSWORD = 'wrong-password';
+
 class AccountLogic {
-  void login(String email, String password) {
-    log('id: $email');
-    log('password: $password');
+  Future<User?> login(String email, String password) async {
+    try {
+      var result = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
+
+      return result.user;
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case USER_NOT_FOUND:
+        case WRONG_PASSWORD:
+          return null;
+        default:
+          throw UnknownLoginFailedException('unknown error');
+      }
+    }
   }
 
-  void register(String email, String password) async {
+  Future<User?> register(String email, String password) async {
     try {
-      await FirebaseAuth.instance
+      var result = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
+      return result.user;
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
         case WEEK_PASSWORD:

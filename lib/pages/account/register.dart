@@ -20,11 +20,24 @@ class RegisterPageState extends State<RegisterPage> {
   final AccountLogic _accountLogic = AccountLogic();
 
   final _form = GlobalKey<FormState>();
-  void onPressedRegisterButton() {
+  void onPressedRegisterButton() async {
     if (_form.currentState == null) return;
     if (!_form.currentState!.validate()) return;
     try {
-      _accountLogic.register(_inputEmail, _inputPassword);
+      var user = await _accountLogic.register(_inputEmail, _inputPassword);
+      if (user == null) {
+        setState(() {
+          _errorText = '会員登録に失敗しました。';
+        });
+      } else {
+        if (!mounted) return;
+
+        Navigator.pushReplacementNamed(
+          context,
+          TodoListPage.path,
+          arguments: TodoListPageArguments(uid: user.uid),
+        );
+      }
     } on WeekPasswordException catch (_) {
       setState(() {
         _errorText = 'パスワードをより強固なものにしてください。';
@@ -38,8 +51,6 @@ class RegisterPageState extends State<RegisterPage> {
         _errorText = '不明なエラーが発生しました、時間をおいて再度登録をお願いします。';
       });
     }
-
-    // Navigator.pushReplacementNamed(context, TodoListPage.path);
   }
 
   @override
